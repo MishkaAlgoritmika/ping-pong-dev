@@ -20,6 +20,7 @@ class Player(GameSprite):
            self.rect.y -= self.speed
        if keys[K_DOWN] and self.rect.y < win_height - 80:
            self.rect.y += self.speed
+
    def update_l(self):
        keys = key.get_pressed()
        if keys[K_w] and self.rect.y > 5:
@@ -29,8 +30,8 @@ class Player(GameSprite):
 
 #игровая сцена:
 back = (200, 255, 255) #цвет фона (background)
-win_width = 600
-win_height = 500
+win_width = 1200
+win_height = 700
 window = display.set_mode((win_width, win_height))
 window.fill(back)
 
@@ -40,58 +41,90 @@ finish = False
 clock = time.Clock()
 FPS = 60
 
-#создания мяча и ракетки   
-racket1 = Player('redracket.png', 30, 200, 4, 50, 150) 
-racket2 = Player('greenracket.png', 520, 200, 4, 50, 150)
-ball = GameSprite('tenis_ball.png', 200, 200, 4, 50, 50)
+#создания мяча и ракетки 
+racket_width = 50
+racket_height = 150
+ball_width = 50
+ball_height = 50
+
+
+racket1 = Player('redracket.png', 30, win_height / 2 - racket_height / 2, 4, racket_width, racket_height) 
+racket2 = Player('greenracket.png', win_width - racket_width - 30, win_height / 2 - racket_height / 2, 4, racket_width, racket_height)
+ball = GameSprite('tenis_ball.png', win_width / 2 - ball_width / 2, win_height / 2 - ball_height / 2, 4, ball_width, ball_height)
 
 font.init()
-font = font.Font(None, 35)
-lose1 = font.render('PLAYER 1 LOSE!', True, (180, 0, 0))
-lose2 = font.render('PLAYER 2 LOSE!', True, (180, 0, 0))
+font1 = font.Font(None, 35)
+lose1 = font1.render('ПОБЕДА 2 ИГРОКА!', True, (180, 0, 0))
+lose2 = font1.render('ПОБЕДА 1 ИГРОКА!', True, (180, 0, 0))
+text_shift_x = 100
+
+score_font = font.Font(None, 50)
+score_text_color = (0, 0, 0)
+score_text_shift_x = 35
+score_text_shift_y = 25
+
 
 speed_x = 3
 speed_y = 3
 
+win_score = 3
+player1_score = 0
+player2_score = 0
+
 while game:
-   for e in event.get():
-       if e.type == QUIT:
-           game = False
+    for e in event.get():
+        if e.type == QUIT:
+            game = False
   
-   if finish != True:
-       window.fill(back)
-       racket1.update_l()
-       racket2.update_r()
-       ball.rect.x += speed_x
-       ball.rect.y += speed_y
+    if finish != True:
+        window.fill(back)
+        racket1.update_l()
+        racket2.update_r()
+        ball.rect.x += speed_x
+        ball.rect.y += speed_y
 
-       if sprite.collide_rect(racket1, ball) or sprite.collide_rect(racket2, ball):
-           speed_x *= -1
-           speed_y *= 1
+        #При касании мячом ракетки менять направление и скорость мяча
+        if sprite.collide_rect(racket1, ball) or sprite.collide_rect(racket2, ball):
+            speed_x *= -1.2
       
-       #если мяч достигает границ экрана, меняем направление его движения
-       if ball.rect.y > win_height-50 or ball.rect.y < 0:
-           speed_y *= -1
+        #если мяч достигает границ экрана, меняем направление его движения
+        if ball.rect.y > win_height - ball_height or ball.rect.y < 0:
+            speed_y *= -1
+
+        #если мяч улетел дальше ракетки, выводим условие проигрыша для первого игрока
+        if ball.rect.x < 0:
+            player2_score += 1
+            ball.rect.x =  win_width / 2 - ball_width / 2
+            ball.rect.y =  win_height / 2 - ball_height / 2
+            speed_x = 3
+            speed_x *= -1
+
+        #если мяч улетел дальше ракетки, выводим условие проигрыша для второго игрока
+        if ball.rect.x > win_width:
+            player1_score += 1
+            ball.rect.x =  win_width / 2 - ball_width / 2
+            ball.rect.y =  win_height / 2 - ball_height / 2
+            speed_x *= -1
 
 
-       #если мяч улетел дальше ракетки, выводим условие проигрыша для первого игрока
-       if ball.rect.x < 0:
-           finish = True
-           window.blit(lose1, (200, 200))
-           game_over = True
+        score_text = score_font.render(str(player1_score) + " : " + str(player2_score), 1, score_text_color)
+        window.blit(score_text, (win_width / 2 - score_text_shift_x, score_text_shift_y))
+
+        if player1_score >= win_score or player2_score >= win_score:
+            if player1_score >= win_score:
+                window.blit(lose2, (win_width / 2 - text_shift_x, win_height / 2))
+            elif player2_score >= win_score:
+                window.blit(lose2, (win_width / 2 - text_shift_x, win_height / 2))
+            
+            ball.rect.x =  win_width / 2 - ball_width / 2
+            ball.rect.y =  score_text_shift_y + ball_height + 25
+            game_over = True
+            finish = True
+
+        racket1.reset()
+        racket2.reset()
+        ball.reset()
 
 
-       #если мяч улетел дальше ракетки, выводим условие проигрыша для второго игрока
-       if ball.rect.x > win_width:
-           finish = True
-           window.blit(lose2, (200, 200))
-           game_over = True
-
-
-       racket1.reset()
-       racket2.reset()
-       ball.reset()
-
-
-   display.update()
-   clock.tick(FPS)
+    display.update()
+    clock.tick(FPS)
