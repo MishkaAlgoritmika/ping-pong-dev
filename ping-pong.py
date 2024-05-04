@@ -105,7 +105,7 @@ while game:
         #При касании мячом ракетки менять направление и скорость мяча
         if sprite.collide_rect(racket1, ball) or sprite.collide_rect(racket2, ball):
             speed_x *= -1.2
-            win.fill((255, 255, 255))
+
             #будем уменьшать размеры ракеток
             if sprite.collide_rect(racket1, ball):
                 racket1.change_size()
